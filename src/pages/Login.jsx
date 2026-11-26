@@ -1,89 +1,68 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import FormField from "@/components/FormField";
+
+// 1. Rules (the schema)
+const schema = z.object({
+  email: z.email({ error: "Enter a valid email address" }),
+  password: z.string().min(6, { error: "Password must be at least 6 characters" }),
+});
 
 function Login() {
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
-  const [message, setMessage] = useState("");
 
-  // Update one field when the user types
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  // 2. Connect the rules to the form
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(schema),
+  });
 
-  // Check the fields and return friendly error messages
-  const validate = () => {
-    const found = {};
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) found.email = "Enter an email like you@college.edu.";
-    if (!form.password) found.password = "Enter your password.";
-    return found;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const found = validate();
-    setErrors(found);
-    if (Object.keys(found).length > 0) return;
-
-    // TODO: connect to your backend later, for example:
-    // fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify(form) });
-    setMessage("Welcome back! Signing you in...");
+  // 3. Runs only when everything is valid
+  const onSubmit = (data) => {
+    console.log(JSON.stringify(data, null, 2));
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-violet-100 via-white to-teal-100 p-6">
       <Card className="w-full max-w-md shadow-xl">
-
         <CardHeader className="text-center">
-          {/* Soft pulsing circle: a slow, calming "breathing" effect */}
           <div className="mx-auto mb-3 h-14 w-14 animate-pulse rounded-full bg-gradient-to-br from-violet-400 to-teal-400" />
           <CardTitle className="text-2xl">Welcome back</CardTitle>
           <CardDescription>Sign in to continue to PulseWork AI.</CardDescription>
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          {/* noValidate stops the browser's own email popup so Zod's messages show instead */}
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-2">
 
-            {/* Email */}
-            <div className="space-y-1">
-              <Label htmlFor="email">Email</Label>
+            <FormField label="Email" htmlFor="email" error={errors.email?.message}>
               <div className="relative">
                 <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <Input id="email" name="email" type="email" placeholder="you@college.edu"
-                  className="pl-10" value={form.email} onChange={handleChange} />
+                <Input id="email" type="email" placeholder="you@college.edu" className="pl-10" {...register("email")} />
               </div>
-              <p className="min-h-5 text-sm text-orange-700">{errors.email}</p>
-            </div>
+            </FormField>
 
-            {/* Password */}
-            <div className="space-y-1">
-              <Label htmlFor="password">Password</Label>
+            <FormField label="Password" htmlFor="password" error={errors.password?.message}>
               <div className="relative">
                 <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <Input id="password" name="password" type={showPassword ? "text" : "password"}
-                  placeholder="Your password" className="pl-10 pr-10"
-                  value={form.password} onChange={handleChange} />
+                <Input id="password" type={showPassword ? "text" : "password"} placeholder="Your password"
+                  className="pl-10 pr-10" {...register("password")} />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   aria-label={showPassword ? "Hide password" : "Show password"}>
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              <p className="min-h-5 text-sm text-orange-700">{errors.password}</p>
-            </div>
+            </FormField>
 
             <Button type="submit" className="w-full">Sign in</Button>
-            <p className="min-h-5 text-center font-semibold text-teal-700">{message}</p>
           </form>
-
-          <div className="flex items-center justify-center gap-2 pt-2 text-xs text-gray-400">
-            <ShieldCheck size={15} /> Your information is protected and secure.
-          </div>
         </CardContent>
 
         <CardFooter className="justify-center pb-8">
@@ -92,7 +71,6 @@ function Login() {
             <Link to="/register" className="ml-1 font-semibold text-violet-600 hover:underline">Create account</Link>
           </p>
         </CardFooter>
-
       </Card>
     </div>
   );

@@ -1,72 +1,66 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ShieldCheck } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import FormField from "@/components/FormField";
+
+const schema = z
+  .object({
+    name: z.string().min(2, { error: "Enter your full name" }),
+    email: z.email({ error: "Enter a valid email address" }),
+    password: z
+      .string()
+      .min(8, { error: "Use at least 8 characters" })
+      .regex(/[A-Z]/, { error: "Add at least one capital letter" })
+      .regex(/[0-9]/, { error: "Add at least one number" }),
+    confirm: z.string(),
+  })
+  // Compare the two passwords and show the error under "confirm"
+  .refine((d) => d.password === d.confirm, {
+    error: "Passwords don't match",
+    path: ["confirm"],
+  });
 
 function Register() {
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
-  const [errors, setErrors] = useState({});
-  const [message, setMessage] = useState("");
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(schema),
+  });
 
-  // Update one field when the user types
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  // Check every field and return a list of friendly error messages
-  const validate = () => {
-    const found = {};
-    if (form.name.trim().length < 2) found.name = "Enter your full name.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) found.email = "Enter an email like you@college.edu.";
-    if (form.password.length < 8) found.password = "Use at least 8 characters.";
-    if (form.confirm !== form.password) found.confirm = "Passwords don't match yet.";
-    return found;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const found = validate();
-    setErrors(found);
-    if (Object.keys(found).length > 0) return;
-
-    // TODO: send to your backend later, for example:
-    // fetch("/api/register", { method: "POST", headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({ name: form.name, email: form.email, password: form.password }) });
-    setMessage("Account created! You can sign in now.");
+  const onSubmit = (data) => {
+    console.log(JSON.stringify(data, null, 2));
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-violet-50 to-teal-50 p-6">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-violet-100 via-white to-teal-100 p-6">
+      <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Create your account</CardTitle>
           <CardDescription>It takes under a minute.</CardDescription>
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            {[
-              { name: "name", label: "Full name", type: "text", placeholder: "Your name" },
-              { name: "email", label: "Email", type: "email", placeholder: "you@college.edu" },
-              { name: "password", label: "Password", type: "password", placeholder: "At least 8 characters" },
-              { name: "confirm", label: "Confirm password", type: "password", placeholder: "Type it once more" },
-            ].map((field) => (
-              <div key={field.name} className="space-y-1">
-                <Label htmlFor={field.name}>{field.label}</Label>
-                <Input id={field.name} name={field.name} type={field.type}
-                  placeholder={field.placeholder} value={form[field.name]} onChange={handleChange} />
-                <p className="min-h-5 text-sm text-orange-700">{errors[field.name]}</p>
-              </div>
-            ))}
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-2">
+            <FormField label="Full name" htmlFor="name" error={errors.name?.message}>
+              <Input id="name" placeholder="Your name" {...register("name")} />
+            </FormField>
+
+            <FormField label="Email" htmlFor="email" error={errors.email?.message}>
+              <Input id="email" type="email" placeholder="you@college.edu" {...register("email")} />
+            </FormField>
+
+            <FormField label="Password" htmlFor="password" error={errors.password?.message}>
+              <Input id="password" type="password" placeholder="8+ characters, 1 capital, 1 number" {...register("password")} />
+            </FormField>
+
+            <FormField label="Confirm password" htmlFor="confirm" error={errors.confirm?.message}>
+              <Input id="confirm" type="password" placeholder="Type it once more" {...register("confirm")} />
+            </FormField>
 
             <Button type="submit" className="w-full">Create account</Button>
-            <p className="min-h-5 text-center font-semibold text-teal-700">{message}</p>
           </form>
-
-          <div className="flex items-center justify-center gap-2 pt-2 text-xs text-gray-400">
-            <ShieldCheck size={15} /> Your information is protected and secure.
-          </div>
         </CardContent>
 
         <CardFooter className="justify-center pb-8">
