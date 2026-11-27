@@ -1,17 +1,11 @@
-import { Label } from "@/components/ui/label";
-
-// Same look as shadcn Input, for <select> and <textarea>
-export const fieldClass =
-  "w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-violet-400";
-
+// Label + input + error message. Used by all forms.
 function FormField({ label, htmlFor, error, children }) {
   return (
-    <div className="space-y-1">
-      <Label htmlFor={htmlFor}>{label}</Label>
+    <div className="space-y-1.5">
+      <label htmlFor={htmlFor} className="text-sm font-medium text-zinc-300">{label}</label>
       {children}
-      <p className="min-h-5 text-sm text-orange-700">{error}</p>
+      <p className="min-h-5 text-sm text-orange-400">{error}</p>
     </div>
   );
 }
-
 export default FormField;
